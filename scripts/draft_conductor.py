@@ -8,8 +8,8 @@ import copy
 import datetime
 import json
 import os
-import random
 import select
+import secrets
 import signal
 import sys
 import threading
@@ -349,7 +349,7 @@ class DraftConductor:
                     "6": "false",
                     "7": "false",
                     "8": "KONA",
-                    "nocache": random.randrange(1_000_000),
+                    "nocache": secrets.randbelow(1_000_000),
                 }
                 response = requests.get(
                     url,
