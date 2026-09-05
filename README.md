@@ -6,18 +6,25 @@ This MCP (Model Context Protocol) server allows LLMs like Claude to interact wit
 
 ## Features (MCP Tools)
 
-- **Authentication**: Securely store ESPN credentials for the current session (for private leagues)
+- **Authentication**: Store ESPN credentials for only the current MCP connection
 - **League Info**: Get basic information about fantasy football leagues
 - **Team Rosters**: View current team rosters and player details
 - **Player Stats**: Find and display stats for specific players
 - **League Standings**: View current team rankings and performance metrics
 - **Matchup Information**: Get details about weekly matchups
+- **Refresh**: Replace cached league data on demand
+
+Tools return structured JSON-compatible data. Roster results omit large weekly stat
+maps unless the caller requests one week with `stats_week`.
+
+League objects expire after five minutes. The `logout` tool removes credentials and
+all cached private league objects for the current connection.
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.10 or higher
+- Python 3.12 or higher
 - `uv` package manager
 - [Claude Desktop](https://claude.ai/download) for the best experience
 
@@ -46,4 +53,3 @@ This MCP (Model Context Protocol) server allows LLMs like Claude to interact wit
 ## Acknowledgements
 
 [cwendt94/espn-api](https://github.com/cwendt94/espn-api) for the nifty python wrapper around the ESPN Fantasy API
-
