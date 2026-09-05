@@ -2,7 +2,9 @@
 
 ## Overview
 
-This MCP (Model Context Protocol) server allows LLMs like Claude to interact with the ESPN Fantasy Football API. It provides tools for accessing league data, team rosters, player statistics, and more through a standardized interface. It can work with both public and private ESPN Leagues.
+This MCP server lets language models use ESPN Fantasy Football data. It provides
+league, roster, player, matchup, draft, and guarded team-management tools. It works
+with public and private ESPN leagues.
 
 ## Features (MCP Tools)
 
@@ -13,6 +15,14 @@ This MCP (Model Context Protocol) server allows LLMs like Claude to interact wit
 - **League Standings**: View current team rankings and performance metrics
 - **Matchup Information**: Get details about weekly matchups
 - **Refresh**: Replace cached league data on demand
+- **Draft State**: Get the live draft order, current pick, and last completed pick
+- **Draft Picks**: Get completed or scheduled picks with pagination and team filters
+- **Draft Pool**: Get available players in compact ESPN PPR order
+- **Draft Context**: Get recent picks, team picks, and top players together
+- **Draft Refresh**: Refresh draft data without rebuilding unrelated league data
+- **Live Draft Pick**: Preview and submit one snake or linear draft selection
+- **Free-Agent Move**: Preview and execute one atomic player add and drop
+- **Lineup Swap**: Preview and execute one starter and bench swap
 
 Tools return structured JSON-compatible data. Roster results omit large weekly stat
 maps unless the caller requests one week with `stats_week`.
@@ -20,9 +30,47 @@ maps unless the caller requests one week with `stats_week`.
 League objects expire after five minutes. The `logout` tool removes credentials and
 all cached private league objects for the current connection.
 
+Draft reads cannot change draft settings. The two draft-pick tools can submit one
+live selection. The server does not expose waiver or trade writes because their
+request formats lack sufficient confirmation.
+
+Draft state uses a two-second cache. Call `refresh_draft` before a time-sensitive
+recommendation. Use `get_draft_context` to avoid separate pick and player calls.
+
 For private leagues, set both `ESPN_S2` and `ESPN_SWID` in the server process.
 The environment option keeps cookie values outside MCP tool arguments and chat logs.
 Session credentials from the `authenticate` tool override environment credentials.
+
+### Write safeguards
+
+Write tools use ESPN's undocumented transaction endpoint. ESPN can change this
+endpoint without notice.
+
+The server disables all writes by default. Set `ESPN_WRITE_ENABLED=true` in the
+server process to enable writes. Keep this value `false` when you only need reads.
+
+Live draft picks need a second flag. Set `ESPN_DRAFT_WRITE_ENABLED=true` only for
+the draft. Turn this flag off after the draft.
+
+Each write needs two tool calls:
+
+1. Call the matching `preview_*` tool.
+2. Review the returned team, players, period, and action.
+3. Pass the returned token to the matching `execute_*` tool within 120 seconds.
+
+Use `preview_draft_pick` and `execute_draft_pick` for each live pick. The server
+confirms the current team, pick number, player availability, draft type, and team
+ownership before each submission. The draft tool supports snake and linear drafts.
+The draft tool does not support salary-cap drafts.
+
+The server binds each token to one exact action. The server accepts each token once.
+The server clears tokens after logout or credential changes. A successful write
+also clears cached league and draft data.
+
+The live draft tool follows ESPN's current web draft protocol. ESPN does not publish
+this protocol. The test suite never sends a real draft selection.
+
+Copy `.env.example` to `.env` for local setup. Never commit real ESPN cookies.
 
 ## Installation
 
@@ -56,4 +104,5 @@ Session credentials from the `authenticate` tool override environment credential
 
 ## Acknowledgements
 
-[cwendt94/espn-api](https://github.com/cwendt94/espn-api) for the nifty python wrapper around the ESPN Fantasy API
+[cwendt94/espn-api](https://github.com/cwendt94/espn-api) provides the Python ESPN
+API wrapper.
