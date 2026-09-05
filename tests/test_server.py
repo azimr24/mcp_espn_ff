@@ -132,6 +132,25 @@ class SessionIdTests(unittest.TestCase):
         self.assertNotEqual(server._session_id(first), server._session_id(second))
 
 
+class ErrorHandlingTests(unittest.TestCase):
+    def test_request_error_does_not_copy_a_secret_url(self):
+        error = server.requests.ConnectionError(
+            "GET https://example.test/SELECT?token=secret-token"
+        )
+
+        with (
+            mock.patch.object(server.logger, "error") as log_error,
+            self.assertRaisesRegex(
+                RuntimeError,
+                "Draft pick failed because the ESPN request did not complete.",
+            ),
+        ):
+            server._raise_api_error("Draft pick", error)
+
+        logged = repr(log_error.call_args)
+        self.assertNotIn("secret-token", logged)
+
+
 class ToolTests(unittest.IsolatedAsyncioTestCase):
     class Session:
         pass

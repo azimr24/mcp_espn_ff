@@ -11,6 +11,7 @@ from collections import OrderedDict
 from typing import Any
 
 import anyio
+import requests
 from espn_api.football import League
 from espn_api.football.constant import POSITION_MAP, PRO_TEAM_MAP
 from espn_api.requests.espn_requests import ESPNAccessDenied, ESPNInvalidLeague
@@ -826,6 +827,11 @@ def _raise_api_error(action: str, error: Exception) -> None:
         ) from error
     if isinstance(error, ESPNInvalidLeague):
         raise ValueError("ESPN did not find the requested league.") from error
+    if isinstance(error, requests.RequestException):
+        logger.error("%s request failed: %s", action, type(error).__name__)
+        raise RuntimeError(
+            f"{action} failed because the ESPN request did not complete."
+        ) from error
     logger.exception("%s failed", action)
     message = str(error).replace("\n", " ")[:300]
     raise RuntimeError(f"{action} failed: {message}") from error

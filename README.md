@@ -72,6 +72,45 @@ this protocol. The test suite never sends a real draft selection.
 
 Copy `.env.example` to `.env` for local setup. Never commit real ESPN cookies.
 
+### Draft conductor
+
+The draft conductor keeps one live monitor active during a draft. The conductor
+combines ESPN draft-room events with one-second REST checks. The conductor stores
+a recovery snapshot and an append-only pick ledger in `.draft-state/`.
+
+Start the conductor before the first pick. The ESPN stream can reject connections
+before the draft room opens. The conductor retries the connection automatically.
+
+```bash
+ESPN_WRITE_ENABLED=true ESPN_DRAFT_WRITE_ENABLED=true \
+uv run python scripts/draft_conductor.py \
+  --league-id 364366361 \
+  --team-id 3 \
+  --year 2026 \
+  --env-file /absolute/path/to/espn.env
+```
+
+The conductor prints compact JSON events. Send one JSON command per input line.
+
+```json
+{"command":"state","request_id":"state-1"}
+{"command":"pool","limit":15,"position":"WR","request_id":"pool-1"}
+{"command":"preview_pick","player_id":12345,"request_id":"preview-1"}
+{"command":"submit_pick","player_id":12345,"confirmation_token":"TOKEN"}
+{"command":"quit"}
+```
+
+The `preview_pick` command returns a token that expires after 120 seconds. The
+`submit_pick` command rebuilds and confirms the action before ESPN receives it.
+The command fails if the team is not on the clock or the player is unavailable.
+
+Use `--once` for one read-only startup check. Use `--no-stream` only when the ESPN
+draft stream is unavailable. The REST checks remain active in that mode.
+
+The conductor does not decode ESPN's `INIT` recovery payload. Start the conductor
+before pick one for complete stream recovery. REST snapshots still repair known
+picks when ESPN includes those picks in the draft response.
+
 ## Installation
 
 ### Prerequisites
