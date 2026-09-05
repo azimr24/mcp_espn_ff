@@ -7,6 +7,26 @@ import espn_fantasy_server as server
 
 class CacheTests(unittest.TestCase):
     @mock.patch.object(server, "League")
+    @mock.patch.dict(
+        server.os.environ,
+        {"ESPN_S2": "environment-s2", "ESPN_SWID": "environment-swid"},
+        clear=True,
+    )
+    def test_environment_credentials_are_used_when_session_has_none(
+        self, league_class
+    ):
+        api = server.ESPNFantasyFootballAPI()
+
+        api.get_league("session-1", 123, 2026)
+
+        league_class.assert_called_once_with(
+            league_id=123,
+            year=2026,
+            espn_s2="environment-s2",
+            swid="environment-swid",
+        )
+
+    @mock.patch.object(server, "League")
     def test_cache_key_does_not_contain_credentials(self, league_class):
         api = server.ESPNFantasyFootballAPI()
         api.store_credentials("session-1", "secret-s2", "secret-swid")

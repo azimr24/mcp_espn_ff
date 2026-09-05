@@ -6,7 +6,7 @@ This MCP (Model Context Protocol) server allows LLMs like Claude to interact wit
 
 ## Features (MCP Tools)
 
-- **Authentication**: Store ESPN credentials for only the current MCP connection
+- **Authentication**: Use process environment credentials or store session credentials
 - **League Info**: Get basic information about fantasy football leagues
 - **Team Rosters**: View current team rosters and player details
 - **Player Stats**: Find and display stats for specific players
@@ -19,6 +19,10 @@ maps unless the caller requests one week with `stats_week`.
 
 League objects expire after five minutes. The `logout` tool removes credentials and
 all cached private league objects for the current connection.
+
+For private leagues, set both `ESPN_S2` and `ESPN_SWID` in the server process.
+The environment option keeps cookie values outside MCP tool arguments and chat logs.
+Session credentials from the `authenticate` tool override environment credentials.
 
 ## Installation
 

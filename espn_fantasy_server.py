@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 import sys
 import time
 import uuid
@@ -51,7 +52,15 @@ class ESPNFantasyFootballAPI:
         year: int = CURRENT_YEAR,
         refresh: bool = False,
     ) -> League:
-        credentials = self.credentials.get(session_id, {})
+        credentials = self.credentials.get(session_id)
+        if credentials is None:
+            env_espn_s2 = os.environ.get("ESPN_S2")
+            env_swid = os.environ.get("ESPN_SWID")
+            credentials = (
+                {"espn_s2": env_espn_s2, "swid": env_swid}
+                if env_espn_s2 and env_swid
+                else {}
+            )
         credential_version = self.credential_versions.get(session_id, 0)
         cache_key = (session_id, league_id, year, credential_version)
         cached = self.leagues.get(cache_key)
